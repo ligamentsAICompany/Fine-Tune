@@ -1,0 +1,48 @@
+# Core
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-dotenv>=1.0.0
+pydantic-settings>=2.0.0
+
+# LangChain + MCP
+langchain>=1.0.8
+langchain-openai>=0.2.0
+langchain-core>=1.0.0,<2.0.0
+langgraph>=0.2.0
+langchain-mcp-adapters>=0.2.0
+mcp>=1.9.2
+
+# HTTP (upload script / optional)
+httpx>=0.27.0
+
+# Vertex AI (when using vertex_project_id + Qwen)
+google-auth>=2.0.0
+
+# GCS (store uploads + structure JSON in bucket)
+google-cloud-storage>=2.0.0
+
+# Cloud Tasks (persistent parse jobs)
+google-cloud-tasks>=2.16.0
+
+# Postgres (v2 Chat: domain -> datasources)
+psycopg2-binary>=2.9.0
+
+# v3: Embedding-based RAG (FAISS vector store + Vertex AI embeddings + PDF parsing)
+faiss-cpu>=1.7.4
+numpy>=1.24.0,<2.0.0
+google-cloud-aiplatform>=1.60.0
+pypdf>=4.0.0
+# v3: Hybrid retrieval (BM25 + vector) & Chroma client
+rank_bm25>=0.2.2
+chromadb>=0.5.0
+
+# PageIndex dependencies (for v2 parse)
+pymupdf>=1.26.4
+tiktoken>=0.11.0
+pyyaml>=6.0.0
+
+# Nokia RAG — local inference stack
+FlagEmbedding>=1.2.11
+ollama>=0.3.0
+rich>=13.0.0
+
