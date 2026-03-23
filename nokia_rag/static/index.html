@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nokia ISAM RAG Assistant</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #161b25;
+      --border:    #242c3d;
+      --nokia-blue:#005aff;
+      --nokia-dark:#003db3;
+      --user-bg:   #005aff;
+      --bot-bg:    #1c2333;
+      --text:      #e2e8f4;
+      --muted:     #6b7a99;
+      --score:     #00c48c;
+      --danger:    #ff4d6a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 36px;
+      height: 36px;
+      background: var(--nokia-blue);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: -0.5px;
+    }
+
+    .header-title h1 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .header-title p {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border-radius: 20px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--score);
+      box-shadow: 0 0 6px var(--score);
+    }
+
+    /* ── Chat area ── */
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 0;
+      scroll-behavior: smooth;
+    }
+
+    #chat::-webkit-scrollbar { width: 4px; }
+    #chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .message-row {
+      display: flex;
+      padding: 6px 24px;
+      gap: 12px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+    .message-row.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .message-row.user .avatar  { background: var(--nokia-blue); }
+    .message-row.bot  .avatar  { background: var(--border); color: var(--muted); }
+
+    .bubble-wrap { display: flex; flex-direction: column; max-width: 72%; }
+    .message-row.user .bubble-wrap { align-items: flex-end; }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message-row.user .bubble {
+      background: var(--user-bg);
+      border-bottom-right-radius: 3px;
+    }
+
+    .message-row.bot .bubble {
+      background: var(--bot-bg);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 3px;
+    }
+
+    /* Sources toggle */
+    .sources-toggle {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      user-select: none;
+      transition: color 0.15s;
+    }
+
+    .sources-toggle:hover { color: var(--nokia-blue); }
+
+    .sources-panel {
+      display: none;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .sources-panel.open { display: block; }
+
+    .source-item {
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .source-item:last-child { border-bottom: none; }
+
+    .source-score {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--score);
+      background: rgba(0,196,140,0.1);
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-bottom: 4px;
+    }
+
+    /* Typing indicator */
+    .typing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 14px 16px;
+    }
+
+    .typing span {
+      width: 6px;
+      height: 6px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40%            { transform: translateY(-6px); }
+    }
+
+    /* ── Input bar ── */
+    footer {
+      padding: 16px 24px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    #query {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--text);
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      line-height: 1.5;
+      max-height: 140px;
+      transition: border-color 0.15s;
+    }
+
+    #query:focus { border-color: var(--nokia-blue); }
+    #query::placeholder { color: var(--muted); }
+
+    .btn {
+      height: 44px;
+      padding: 0 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+    }
+
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #send-btn {
+      background: var(--nokia-blue);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #send-btn:hover:not(:disabled) { background: var(--nokia-dark); }
+
+    #reset-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    #reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* Empty state */
+    #empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 12px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    #empty .icon {
+      font-size: 40px;
+      opacity: 0.3;
+    }
+
+    #empty p { font-size: 14px; }
+    #empty small { font-size: 12px; opacity: 0.7; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">NK</div>
+    <div class="header-title">
+      <h1>Nokia ISAM RAG Assistant</h1>
+      <p>Fine-tuned BGE-Large &nbsp;+&nbsp; BGE Reranker v2 &nbsp;+&nbsp; Qwen2.5:3b</p>
+    </div>
+  </div>
+  <div class="badge">
+    <div class="dot"></div>
+    Local &nbsp;·&nbsp; 888 chunks indexed
+  </div>
+</header>
+
+<div id="chat">
+  <div id="empty">
+    <div class="icon">📡</div>
+    <p>Ask a question about Nokia ISAM alarms</p>
+    <small>Severity · Root cause · Corrective actions · Alarm codes</small>
+  </div>
+</div>
+
+<footer>
+  <div class="input-row">
+    <textarea id="query" rows="1" placeholder="Ask about an alarm, code, or hardware issue..."></textarea>
+    <button class="btn" id="reset-btn" title="Clear conversation history">Reset</button>
+    <button class="btn" id="send-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Send
+    </button>
+  </div>
+  <p class="hint">Press <kbd style="background:var(--border);padding:1px 5px;border-radius:3px;font-size:10px;">Enter</kbd> to send &nbsp;·&nbsp; <kbd style="background:var(--border);padding:1px 5px;border-radius:3px;font-size:10px;">Shift+Enter</kbd> for new line</p>
+</footer>
+
+<script>
+  const chat     = document.getElementById('chat');
+  const empty    = document.getElementById('empty');
+  const queryEl  = document.getElementById('query');
+  const sendBtn  = document.getElementById('send-btn');
+  const resetBtn = document.getElementById('reset-btn');
+
+  // Auto-resize textarea
+  queryEl.addEventListener('input', () => {
+    queryEl.style.height = 'auto';
+    queryEl.style.height = Math.min(queryEl.scrollHeight, 140) + 'px';
+  });
+
+  // Enter to send
+  queryEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+  resetBtn.addEventListener('click', resetConversation);
+
+  function addMessage(role, text, sources = []) {
+    empty.style.display = 'none';
+
+    const row = document.createElement('div');
+    row.className = `message-row ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = role === 'user' ? 'You' : 'AI';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bubble-wrap';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+
+    if (role === 'bot' && sources.length > 0) {
+      const toggle = document.createElement('div');
+      toggle.className = 'sources-toggle';
+      toggle.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${sources.length} sources`;
+
+      const panel = document.createElement('div');
+      panel.className = 'sources-panel';
+
+      sources.forEach((s, i) => {
+        const item = document.createElement('div');
+        item.className = 'source-item';
+        item.innerHTML = `<span class="source-score">score ${s.score}</span><br>${s.text}`;
+        panel.appendChild(item);
+      });
+
+      toggle.addEventListener('click', () => {
+        panel.classList.toggle('open');
+        const arrow = toggle.querySelector('svg');
+        arrow.style.transform = panel.classList.contains('open') ? 'rotate(180deg)' : '';
+      });
+
+      wrap.appendChild(toggle);
+      wrap.appendChild(panel);
+    }
+
+    row.appendChild(avatar);
+    row.appendChild(wrap);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+    return row;
+  }
+
+  function addTyping() {
+    const row = document.createElement('div');
+    row.className = 'message-row bot';
+    row.id = 'typing-row';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = 'AI';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bubble-wrap';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+
+    wrap.appendChild(bubble);
+    row.appendChild(avatar);
+    row.appendChild(wrap);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+    return row;
+  }
+
+  async function sendMessage() {
+    const query = queryEl.value.trim();
+    if (!query) return;
+
+    queryEl.value = '';
+    queryEl.style.height = 'auto';
+    sendBtn.disabled = true;
+    queryEl.disabled = true;
+
+    addMessage('user', query);
+    const typingRow = addTyping();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+
+      const data = await res.json();
+      typingRow.remove();
+
+      if (data.error) {
+        addMessage('bot', 'Error: ' + data.error);
+      } else {
+        addMessage('bot', data.answer, data.sources || []);
+      }
+    } catch (err) {
+      typingRow.remove();
+      addMessage('bot', 'Could not reach the server. Is it running?');
+    } finally {
+      sendBtn.disabled = false;
+      queryEl.disabled = false;
+      queryEl.focus();
+    }
+  }
+
+  async function resetConversation() {
+    await fetch('/api/reset', { method: 'POST' });
+    // Remove all message rows (leave empty state div intact)
+    chat.querySelectorAll('.message-row').forEach(el => el.remove());
+    empty.style.display = 'flex';
+    queryEl.focus();
+  }
+</script>
+</body>
+</html>
